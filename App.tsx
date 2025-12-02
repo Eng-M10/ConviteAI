@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, Share2, Image as ImageIcon, Layout, Type, MapPin, Calendar, User, Clock, PartyPopper, Users, List, ChevronLeft, ChevronRight, Palette, RotateCcw } from 'lucide-react';
+import { Download, Share2, Image as ImageIcon, Layout, Type, MapPin, Calendar, User, Clock, PartyPopper, Users, List, ChevronLeft, ChevronRight, Palette, RotateCcw, Link as LinkIcon } from 'lucide-react';
 import { InvitationData, ThemeType } from './types';
 import { PreviewCard } from './components/PreviewCard';
 import { ShareModal } from './components/ShareModal';
@@ -60,6 +60,10 @@ function App() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("A imagem é muito grande. Por favor, escolha uma imagem menor que 5MB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setData(prev => ({ ...prev, backgroundImage: reader.result as string }));
@@ -98,9 +102,23 @@ function App() {
     setData(prev => ({ ...prev, guestName: guests[newIdx] }));
   };
 
-  const generateShareUrl = () => {
-    // Exclude heavy background image from URL sharing
-    const { backgroundImage, ...shareableData } = data;
+  const generateShareUrl = (customSlug?: string) => {
+    // Clone data to avoid mutating state
+    const shareableData = { ...data };
+    
+    // 1. Handle backgroundImage: Remove if it's a large Data URL (Base64) or empty
+    // We allow short external URLs if implemented in the future, but block base64 to prevent broken links
+    if (!shareableData.backgroundImage || shareableData.backgroundImage.startsWith('data:')) {
+      delete shareableData.backgroundImage;
+    }
+
+    // 2. Optimization: Remove all keys with empty strings or undefined values to reduce URL size
+    Object.keys(shareableData).forEach(key => {
+      const k = key as keyof InvitationData;
+      if (shareableData[k] === "" || shareableData[k] === undefined || shareableData[k] === null) {
+        delete shareableData[k];
+      }
+    });
     
     // Encode with support for unicode (emojis, accents)
     const jsonString = JSON.stringify(shareableData);
@@ -108,6 +126,14 @@ function App() {
     
     const url = new URL(window.location.href);
     url.searchParams.set('data', encoded);
+    
+    // Add custom slug as a vanity parameter
+    if (customSlug) {
+        url.searchParams.set('slug', customSlug);
+    } else {
+        url.searchParams.delete('slug');
+    }
+
     return url.toString();
   };
 
@@ -402,18 +428,35 @@ function App() {
                     </div>
                 </div>
 
-                <div className="pt-2">
-                  <label className="flex items-center justify-center w-full h-12 border-2 border-dashed border-slate-700 rounded-xl hover:border-purple-500/50 hover:bg-slate-800/50 transition-all cursor-pointer group">
-                    <div className="flex items-center gap-2 text-slate-500 group-hover:text-purple-400">
-                      <ImageIcon size={18} />
-                      <span className="text-sm font-medium">Carregar Imagem de Fundo</span>
-                    </div>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                  </label>
+                <div className="pt-2 space-y-3">
+                  <div className="space-y-1">
+                     <label className="text-[10px] text-slate-400 uppercase font-bold">Imagem de Fundo</label>
+                     <div className="flex gap-2">
+                        <label className="flex-1 flex items-center justify-center h-10 border border-dashed border-slate-700 bg-slate-800/50 rounded-lg hover:border-purple-500/50 hover:bg-slate-800 transition-all cursor-pointer group">
+                            <div className="flex items-center gap-2 text-slate-400 group-hover:text-purple-400 text-xs font-medium">
+                            <ImageIcon size={14} />
+                            <span>Upload Arquivo</span>
+                            </div>
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                        </label>
+                     </div>
+                  </div>
+
+                  <div className="flex gap-2 items-center bg-slate-900/50 rounded-lg px-3 py-2 border border-white/5 focus-within:border-purple-500/50 transition-colors">
+                     <LinkIcon size={14} className="text-slate-500 flex-shrink-0" />
+                     <input 
+                        type="text"
+                        placeholder="Ou cole o link de uma imagem (https://...)"
+                        value={data.backgroundImage?.startsWith('data:') ? '' : data.backgroundImage || ''}
+                        onChange={(e) => setData(prev => ({...prev, backgroundImage: e.target.value}))}
+                        className="bg-transparent w-full outline-none text-xs placeholder:text-slate-600"
+                     />
+                  </div>
+                  
                   {data.backgroundImage && (
                     <button 
                       onClick={() => setData(prev => ({...prev, backgroundImage: undefined}))}
-                      className="text-xs text-red-400 mt-2 hover:underline w-full text-center"
+                      className="text-xs text-red-400 hover:text-red-300 hover:underline w-full text-center flex items-center justify-center gap-1"
                     >
                       Remover imagem
                     </button>
@@ -458,7 +501,7 @@ function App() {
       <ShareModal 
         isOpen={isShareModalOpen} 
         onClose={() => setIsShareModalOpen(false)} 
-        url={generateShareUrl()} 
+        generateUrl={generateShareUrl} 
       />
       
       {/* Print Styles */}
