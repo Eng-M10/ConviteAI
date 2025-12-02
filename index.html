@@ -6,45 +6,8 @@
     <title>Convite.AI - Gerador de Convites</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@700&family=Montserrat:wght@400;600;800&family=Lora:ital,wght@0,400;1,400&family=Great+Vibes&family=Pacifico&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Outfit', 'sans-serif'],
-              serif: ['Playfair Display', 'serif'],
-              cursive: ['Dancing Script', 'cursive'],
-            },
-            colors: {
-              glass: "rgba(255, 255, 255, 0.1)",
-              glassBorder: "rgba(255, 255, 255, 0.2)",
-            }
-          },
-        },
-      }
-    </script>
-    <style>
-      body {
-        margin: 0;
-        background-color: #0f172a;
-        color: white;
-      }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #1e293b; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #475569; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
-      }
-    </style>
-  <script type="importmap">
+    <link rel="stylesheet" href="./styles/App.css" />
+  <!-- <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
@@ -54,9 +17,10 @@
     "html2canvas": "https://esm.sh/html2canvas@1.4.1"
   }
 }
-</script>
+</script> -->
 </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
