@@ -116,7 +116,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({ data, className = '', 
                     </h1>
                     <div className="w-16 h-1 mx-auto bg-current opacity-40 rounded-full"></div>
                     <p className={`text-lg mt-2 ${theme.fontBody}`} style={bodyStyle}>
-                        por {displayHost}
+                         {displayHost}
                     </p>
                 </div>
 
