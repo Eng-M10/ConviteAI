@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, Share2, Image as ImageIcon, Layout, Type, MapPin, Calendar, User, Clock, PartyPopper, Users, List, ChevronLeft, ChevronRight, Palette, RotateCcw, Link as LinkIcon } from 'lucide-react';
+import { Download, Share2, Image as ImageIcon, Layout, Type, MapPin, Calendar, User, Clock, PartyPopper, Users, List, ChevronLeft, ChevronRight, Palette, RotateCcw, Link as LinkIcon, Loader2 } from 'lucide-react';
+// @ts-ignore
+import html2canvas from 'html2canvas';
 import { InvitationData, ThemeType } from './types';
 import { PreviewCard } from './components/PreviewCard';
 import { ShareModal } from './components/ShareModal';
@@ -29,6 +31,7 @@ const FONT_OPTIONS = [
 function App() {
   const [data, setData] = useState<InvitationData>(INITIAL_DATA);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Guest List Management
@@ -137,9 +140,39 @@ function App() {
     return url.toString();
   };
 
-  const handleDownload = () => {
-    alert("Para salvar: \n1. Tire um Print Screen \n2. Ou use a função de imprimir do navegador e selecione 'Salvar como PDF'");
-    window.print();
+  const handleDownloadImage = async () => {
+    if (!cardRef.current) return;
+    
+    setIsDownloading(true);
+
+    try {
+        // Wait a moment for any potential font loading or render settlement
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const canvas = await html2canvas(cardRef.current, {
+            scale: 2, // High resolution (Retina)
+            useCORS: true, // Attempt to handle external images
+            backgroundColor: null, // Transparent bg where possible
+            logging: false,
+            // ignoreElements: (element) => element.classList.contains('no-print') // If we had elements to hide
+        });
+
+        const image = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        const filename = data.guestName 
+            ? `convite-${data.guestName.toLowerCase().replace(/\s+/g, '-')}.png` 
+            : `convite-${data.title.toLowerCase().replace(/\s+/g, '-') || 'evento'}.png`;
+        
+        link.href = image;
+        link.download = filename;
+        link.click();
+
+    } catch (error) {
+        console.error("Erro ao gerar imagem:", error);
+        alert("Não foi possível gerar a imagem. Se você estiver usando uma imagem externa, ela pode ter restrições de segurança (CORS). Tente fazer upload do arquivo.");
+    } finally {
+        setIsDownloading(false);
+    }
   };
 
   const resetCustomStyles = () => {
@@ -174,11 +207,12 @@ function App() {
             </button>
             
             <button 
-               onClick={handleDownload}
-               className="hidden md:flex items-center gap-2 bg-white text-slate-900 px-4 py-2 rounded-full text-sm font-semibold hover:bg-slate-200 transition-colors"
+               onClick={handleDownloadImage}
+               disabled={isDownloading}
+               className="hidden md:flex items-center gap-2 bg-white text-slate-900 px-4 py-2 rounded-full text-sm font-semibold hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download size={16} />
-              Baixar / Imprimir
+              {isDownloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              {isDownloading ? 'Gerando...' : 'Baixar Imagem'}
             </button>
           </div>
         </div>
@@ -329,7 +363,7 @@ function App() {
                             </div>
                         )}
                         <p className="text-[10px] text-slate-500 text-center">
-                           Navegue pela lista para gerar e baixar convites individuais.
+                           Navegue pela lista para baixar cada convite individualmente.
                         </p>
                     </div>
                 )}
@@ -489,10 +523,11 @@ function App() {
                   <Share2 size={24} />
                 </button>
                  <button 
-                  onClick={handleDownload}
-                  className="bg-white text-slate-900 w-14 h-14 rounded-full flex items-center justify-center shadow-xl z-20 active:scale-95 transition-transform"
+                  onClick={handleDownloadImage}
+                  disabled={isDownloading}
+                  className="bg-white text-slate-900 w-14 h-14 rounded-full flex items-center justify-center shadow-xl z-20 active:scale-95 transition-transform disabled:opacity-70"
                 >
-                  <Download size={24} />
+                  {isDownloading ? <Loader2 size={24} className="animate-spin" /> : <Download size={24} />}
                 </button>
             </div>
         </div>
